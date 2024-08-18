@@ -1,0 +1,180 @@
+---
+title: "Customer Segmentation"
+author: "Akanbi Abdullahi"
+date: "2024-08-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+
+```{r}
+library(dplyr)
+library(fastDummies)
+library(factoextra)
+library(ggpubr)
+library(tidyr)
+library(ggplot2)
+library(plotrix)
+library(cluster) 
+```
+
+
+
+#getting the data ready
+```{r}
+data <- read.csv("customer_data.csv", header=TRUE)
+data
+summary(data)
+```
+
+#removing the first column; ID
+```{r}
+data <- data[,2:9]
+data
+```
+
+#checking for the number of profession in the dataset by checking unique values.
+```{r}
+unique(data$Profession)
+```
+
+#transforming empty values to "NA"
+```{r}
+data[data == ""] <- NA
+data <- data[complete.cases(data),]
+```
+
+#building the dataset
+```{r}
+dataset <- data %>% select_if(is.numeric)
+character <- data %>% select_if(is.character)
+```
+
+#transform character into numeric
+```{r}
+character <- dummy_cols(character, remove_most_frequent_dummy = TRUE)
+
+```
+
+#remove the characters in the data
+```{r}
+dataset <- cbind(dataset, character[,6:18]) 
+```
+#scaling the dataset
+```{r}
+dataset[, 1: 16] <- scale(dataset[, 1: 16])
+```
+
+#Determining and vizualizing the optimal number of clusters
+```{r}
+fviz_nbclust(dataset, kmeans, method = "wss") + labs(subtitle = "Elbow Method")
+```
+
+#Clusters
+```{r}
+#clusters <-kmeans(dataset,centers = 6, iter.max = 10)
+#clusters$centers
+set.seed(123)
+k <- 6  # Based on elbow method
+kmeans_model <- kmeans(dataset, centers = k, nstart = 25)
+kmeans_model$centers
+```
+
+```{r}
+#Calculating the silhouette score for K-Means clustering
+silhouette_kmeans <- silhouette(kmeans_model$cluster, dist(dataset))
+
+#Getting the average silhouette score
+avg_silhouette_kmeans <- mean(silhouette_kmeans[, 3])
+```
+
+
+```{r}
+#Visualizing the silhouette plot
+fviz_silhouette(silhouette_kmeans) +
+  ggtitle(paste("Silhouette Plot for K-Means (K =", k, ") - Average Score: ", round(avg_silhouette_kmeans, 3)))
+```
+
+```{r}
+# Output the average silhouette score
+print(paste("Average Silhouette Score for K =", k, ":", avg_silhouette_kmeans))
+```
+
+
+#writing these clusters into a csv file for analysis
+```{r}
+write.csv(clusters$centers, file = "clusters.csv")
+```
+
+#adding the clusters to the customer list
+```{r}
+dataset <- cbind(dataset , clusters$cluster)
+```
+
+
+#visualizing the clusters
+```{r}
+ set.seed(1)
+```
+
+
+```{r}
+pca <- prcomp(dataset, center = TRUE, scale. = TRUE)
+# Ensure clusters$cluster contains the cluster assignments
+pca_data <- data.frame(pca$x, cluster = as.factor(clusters$cluster))
+```
+
+```{r}
+# Visualizing the clusters
+# Plot PCA with cluster assignments
+ggplot(pca_data, aes(x = PC1, y = PC2, color = cluster)) +
+  geom_point() +
+  labs(x = "Principal Component 1", y = "Principal Component 2", color = "Cluster") +
+  ggtitle("PCA Plot with K-Means Clusters")
+```
+
+
+#Gender visualization of the dataset
+```{r}
+a <- table(data$Gender)
+barplot(a, main = "Using BarPlot to display Gender Comparison",
+        ylab = "Count", xlab = "Gender",
+        col = rainbow(length(a)), # Use rainbow() to get a vector of colors
+        legend = rownames(a))
+```
+
+```{r}
+pct=round(a/sum(a)*100) 
+lbs=paste(c("Female","Male"),"",pct,"%",sep=" ")
+pie3D(a,labels=lbs, main="Pie Chart Depicting Ratio of Female and Male")
+```
+#Age distribution of the dataset
+```{r}
+# Defining the age classes and their corresponding colors
+age_classes <- c("0-20", "21-40", "41-60", "61-80", "81-100")
+age_colors <- c("blue", "green", "orange", "red", "purple")
+
+# Creating the histogram with custom age classes and colors
+hist(data$Age,
+     breaks = c(0, 20, 40, 60, 80, 100),
+     col = age_colors,
+     main = "Histogram to Show Count of Age Class",
+     xlab = "Age Class",
+     ylab = "Frequency",
+     labels = TRUE)
+
+# Adding a legend
+legend("topright",
+       legend = age_classes,
+       fill = age_colors,
+       title = "Age Classes")
+```
+
+
+
+
+

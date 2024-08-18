@@ -1,0 +1,180 @@
+---
+title: "Customer Segmentation"
+author: "Akanbi Abdullahi"
+date: "2024-08-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+```
+
+
+```{r}
+# Load required libraries
+library(tidyverse)
+library(dbscan)
+library(ggplot2)
+
+```
+
+```{r}
+# Load the dataset
+data <- read.csv("customer_data.csv", header=TRUE)
+data
+```
+
+
+```{r}
+#removing the first column; ID
+data <- data[,2:9]
+data
+```
+
+```{r}
+#checking for the number of profession in the dataset by checking unique values.
+unique(data$Profession)
+```
+
+#transforming empty values to "NA"
+```{r}
+data[data == ""] <- NA
+data <- data[complete.cases(data),]
+```
+
+#building the dataset
+```{r}
+dataset <- data %>% select_if(is.numeric)
+character <- data %>% select_if(is.character)
+```
+
+#transform character into numeric
+```{r}
+character <- dummy_cols(character, remove_most_frequent_dummy = TRUE)
+
+```
+
+#remove the characters in the data
+```{r}
+dataset <- cbind(dataset, character[,6:18]) 
+```
+#scaling the dataset
+```{r}
+dataset[, 1: 16] <- scale(dataset[, 1: 16])
+
+```
+
+
+```{r}
+# Explore the dataset
+str(dataset)
+summary(dataset)
+```
+
+
+```{r}
+# Perform DBSCAN clustering
+eps <- 0.5
+min_samples <- 5
+dbscan_model <- dbscan(dataset, eps = eps, minPts = min_samples)
+```
+
+```{r}
+
+# Examine the clustering results
+table(dbscan_model$cluster)
+
+```
+
+
+```{r}
+# Compute the Silhouette Score for DBSCAN clustering
+# Exclude noise points (cluster = 0) for silhouette score calculation
+valid_clusters <- dbscan_model$cluster[dbscan_model$cluster != 0]
+valid_data <- dataset[dbscan_model$cluster != 0, ]
+
+# Calculate the Silhouette Score for DBSCAN clusters
+silhouette_dbscan <- silhouette(valid_clusters, dist(valid_data))
+
+# Get the average silhouette score
+avg_silhouette_dbscan <- mean(silhouette_dbscan[, 3])
+
+```
+
+```{r}
+# Visualize the silhouette plot for DBSCAN
+fviz_silhouette(silhouette_dbscan) +
+  ggtitle(paste("Average Silhouette Score for DBSCAN: ", round(avg_silhouette_dbscan, 3))) +
+  theme(legend.position = "bottom", legend.text = element_text(size = 8)) +
+  guides(color = guide_legend(nrow = 1, override.aes = list(size = 3)))
+
+```
+
+
+
+
+```{r}
+# Output the average silhouette score
+Average_Silhouette_Score <- round(avg_silhouette_dbscan, 3)
+Average_Silhouette_Score
+```
+
+
+```{r}
+write.csv(dbscan_model$cluster, file = "dbclusters.csv")
+```
+
+
+```{r}
+# Perform PCA
+pca <- prcomp(dataset, center = TRUE, scale. = TRUE)
+```
+
+```{r}
+# Visualize the clusters
+ggplot(data.frame(pca$x, cluster = as.factor(dbscan_model$cluster)), aes(x = PC1, y = PC2, color = cluster)) +
+  geom_point() +
+  labs(x = "Principal Component 1", y = "Principal Component 2", color = "Cluster") +
+  theme(legend.position = "bottom", legend.text = element_text(size = 8)) +
+  guides(color = guide_legend(nrow = 1, override.aes = list(size = 3))) +
+  ggtitle("PCA Plot with DBSCAN Clusters")
+
+```
+
+
+
+```{r}
+# Add the cluster labels to the original dataset
+dataset <- cbind(dataset , dbscan_model$cluster)
+write.csv(dataset, file = "dbclustersAll.csv")
+```
+
+```{r}
+# Replace the dataset column names
+colnames(dataset)[ncol(dataset)] <- "cluster"
+
+# Convert the cluster labels to factors
+dataset$cluster <- as.factor(dataset$cluster)
+
+# Exclude noise points (cluster = 0)
+df_with_clusters <- dataset %>%
+  filter(cluster != 0)
+
+# Group by the cluster and calculate summary statistics
+cluster_summary <- df_with_clusters %>%
+  group_by(cluster) %>%
+  summarize(across(where(is.numeric), mean))
+
+# Print the cluster summary
+print(cluster_summary)
+
+```
+
+
+
+```{r}
+#write the new grouping into a file
+write.csv(cluster_summary, file = "cluster_summary.csv")
+```
+
