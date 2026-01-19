@@ -1,2 +1,65 @@
-This work, with a dataset of existing customers, explores customer segmentation using two clustering algorithms: K-Means and DBSCAN. The dataset comprises demographic and spending scores. K-Means was implemented using the Elbow method to determine the optimal number of clusters needed for the algorithm to run efficiently. It resulted in six (6) distinct groups in the dataset. However, K-means has a limitation which is its inability to handle noise and it came out with a silhouette score of 0.24. DBSCAN, on the other hand, identified 218 clusters and effectively managed the noise in the dataset. It isolated 2,530 data points out of a total row of 6,718. It gave a higher silhouette score of 0.317. A simple web application was developed to visualize and analyze clustering outcomes, providing insights for targeted marketing strategies. This is an attempt to give users who ordinarily wouldn’t be able to run a data analytics algorithm the opportunity to do it without the rigour of data analytics knowledge.
-Future enhancements to the work could include refining customer labeling so as to be able to identify each group clearly and optimizing the application functionalities.
+Customer Segmentation Using Clustering Algorithms
+
+This project explores customer segmentation using unsupervised machine learning. The goal is simple: group customers based on similarities in demographics and spending behavior, and make the results easy to understand—even for non-technical users.
+
+What This Project Does
+
+Uses K-Means and DBSCAN to segment existing customers.
+
+Works with demographic data and spending scores.
+
+Compares performance and limitations of both algorithms.
+
+Provides a simple web application to visualize and analyze clustering results.
+
+Key Findings
+
+K-Means
+
+Optimal number of clusters determined using the Elbow Method.
+
+Produced 6 distinct customer groups.
+
+Silhouette score: 0.24.
+
+Limitation: poor handling of noise and outliers.
+
+DBSCAN
+
+Identified 218 clusters.
+
+Effectively handled noise by isolating 2,530 out of 6,718 data points.
+
+Silhouette score: 0.317, outperforming K-Means.
+
+Better suited for datasets with irregular cluster shapes and noise.
+
+Why This Matters
+
+Customer segmentation helps businesses:
+
+Understand customer behavior.
+
+Design targeted marketing strategies.
+
+Improve customer engagement and retention.
+
+This project lowers the barrier to entry by allowing users to run and explore clustering results without deep data analytics knowledge.
+
+Tech Stack
+
+Python
+
+R
+
+Visualization libraries
+
+Lightweight web framework for result exploration
+
+Future Improvements
+
+Clearer labeling and interpretation of customer groups.
+
+Performance and usability optimizations in the web application.
+
+Support for additional clustering techniques.
